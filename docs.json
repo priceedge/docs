@@ -44,6 +44,7 @@
           },
           {
             "group": "Writing content",
+            "hidden": true,
             "pages": [
               "essentials/markdown",
               "essentials/code",
@@ -53,6 +54,7 @@
           },
           {
             "group": "AI tools",
+            "hidden": true,
             "pages": [
               "ai-tools/cursor",
               "ai-tools/claude-code",
