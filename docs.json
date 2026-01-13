@@ -12,13 +12,8 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "icon": "book-open-cover",
-          "href": "https://mintlify.com/docs"
-        },
-        {
           "anchor": "Visit PriceEdge",
-          "icon": "newspaper",
+          "icon": "chevrons-down",
           "href": "https://priceedge.com"
         }
       ]
@@ -79,8 +74,8 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Login",
+      "href": "https://https://priceedge.com/login"
     }
   },
   "contextual": {
