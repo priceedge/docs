@@ -1,33 +1,419 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "Authentication"
+description: "There are two ways of authentication: Bearer token and ApiKey"
+icon: key
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+### API url
+The`{api_url}` is **your company specific url** + priceedge.eu/papi. 
 
-## Welcome
+If your company url is **yourdomain** then the API-url would be `yourdomain.priceedge.eu/papi`
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+<Note>In examples the API-url is **yourdomain.priceedge.eu/papi/**</Note>
 
-## Authentication
+### Username and password
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+From the PriceEdge team or your system owner you should have received a username. The password, if not already set, you set via the link in mail you should have received. These are used for ApiKey auth and to get bearer token.
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+### Bearer token
+Authentication is done using a Bearer Token, particular type of access 
+token, with the property that anyone can use the token. In other words, 
+a client doesn’t need a cryptographic key or other secret to use a 
+bearer token. For this reason, the PriceEdge API works only on HTTPS. 
+
+The token is generated with a call to an endpoint with different headers 
+and with a username and password. Beside the generated token, which has 
+a limited expiration time - which is configurable for each client - there 
+will be also created a Refresh Token which is a special kind of token 
+that can be used to obtain a renewed Bearer Token at any time. Refresh 
+tokens must be stored securely by an application because they essentially 
+allow a user to remain authenticated for a long time.
+
+Requests made with invalid credentials value will receive an HTTP 403 – 
+Forbidden response.
+
+On the next pages we will explain in more depth how the security endpoint 
+can be used to obtain the Bearer Token using the username/password or the 
+refresh token
+
+
+### Obtain Bearer token
+
+Application has no security token, needs to make a secure call with the 
+user and password to the **PriceEdge API** to get a valid token. 
+
+Make a POST request to the API:
+
+```http HTTP Example
+POST /{api_url}/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&username={username}&password={user password}& client_id={unique client id}
+```
+
+The result will have the following format:
+
+~~~~
+{ "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmlxdWVfbmFtZSI6InNwYXJrd2FyZVxccmF6dm.......9sZSI6WyJ1c2VyIiwiYWRtaW4iXSwic3ViIjoic3Bhcmt3YXJlXFxyYXp2YW5wYWkiLCJpc3MiOiJsb2NhbGhvc3QiLCJhdWQiOiJjE1ZTA1ZTg4YTc0ZmQ3OGQ1ZGUwM2U5NGRhMDI0NSIsImV4cCI6MTQ2OTAwODI0MCwibmJmIjoxNDY5MDA4MTgwfQ.Ps8NuXgMvPP3nXdz0usLVEvmiZMbp84x_d9Rwhlb2kc",
+  "token_type": "bearer",
+  "expires_in": 59,
+  "refresh_token": "5a8a3c59c0844cda947e71b3d613d526",
+  "as:client_id": "clientId",
+  "userName": "someUserName",
+  ".issued": "Wed, 20 Jul 2016 09:49:40 GMT",
+  ".expires": "Wed, 20 Jul 2016 09:50:40 GMT"
+}
+~~~~
+
+Notes:
+**access_token** will be stored on the client app and used in every request 
+made to the api. The access token is set to expire in 20 minutes. After 
+that a new refresh token has to be issued in 2 ways:  
+**First option**: the one explained above, by using a post call to the 
+token endpoint with the user name and password.
+ **Second option**: send the refresh token to the obtain token endpoint
+		```http HTTP Example
+		POST /{api_url}/token HTTPS/1.1
+		Content-Type: application/x-www-form-urlencoded
+
+		grant_type=refresh_token&
+		refresh_token=5a8a3c59c0844cda947e71b3d613d526& 
+		client_id={unique client id}
+		```
+**refresh_token** will be stored on the client app and used to obtain 
+a new **access_token** when that will expire. This will expire after a 
+longer period than the access_token (suggested are 5 days) 
+
+
+
+
+<Note>In this example the username is pricing@example.com and **_MYPASSWORD123_ as the password</Note>
+
+### First request - GET item metadata Bearer Token
+
+```http HTTP Example
+GET /{api_url}/api/tables/item
+
+Content-Type: application/json
+Authorization: Bearer {token}
+client_id: {unique client id}
+```
+
+
+### First request - GET item metadata ApiKey
+<Note>Don' forget to change to you domain, username and password</Note>
+
+```http HTTP Example
+HTTP /{api_url}/api/tables/item
+Authorization: ApiKey pricing@example.com:MYPASSWORD123
+Content-Type: application/json
+```
+```bash cURL Example
+curl 'https://yourdomain.priceedge.eu/papi/api/tables/item' \
+--header 'Authorization: ApiKey pricing@example.com:MYPASSWORD123' \
+--header 'Content-Type: application/json'
+```
+
+<Warning>ApiKey is case sensitive and note the : between username and password</Warning>
+
+## Expected Response
+The return body will contain a lot of information but for now we are happy that you can connect. Let's move on to next step. 
+
+
+The returned data.
+```JSON
+{
+    "Data": [
+        {
+            "column_id": 12,
+            "name": "_dtLastModifiedDate",
+            "typeName": "datetime2",
+            "max_length": 8,
+            "precision": 27,
+            "scale": 7,
+            "is_nullable": true,
+            "default_value": "(sysdatetime())",
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "datetime2",
+            "precision_display": null,
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 6,
+            "name": "cd_PriceGroup",
+            "typeName": "varchar",
+            "max_length": 20,
+            "precision": 0,
+            "scale": 0,
+            "is_nullable": true,
+            "default_value": null,
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "fk(PriceGroup.Code)",
+            "precision_display": "20",
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 4,
+            "name": "CostForPricing",
+            "typeName": "decimal",
+            "max_length": 9,
+            "precision": 18,
+            "scale": 4,
+            "is_nullable": true,
+            "default_value": null,
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "decimal(18,4)",
+            "precision_display": "18,4",
+            "table_name": "Item",
+            "DATA_TYPE": "Number",
+            "FORMATTING": "###,###,##0.00",
+            "ALIGN": "Right",
+            "ViewSecurityRightID": "dataadmin-item_CostForPricing_view",
+            "EditSecurityRightID": "dataadmin-item_CostForPricing_edit",
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 5,
+            "name": "Description",
+            "typeName": "nvarchar",
+            "max_length": 0,
+            "precision": 0,
+            "scale": 0,
+            "is_nullable": true,
+            "default_value": null,
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "nvarchar(0)",
+            "precision_display": "0",
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 10,
+            "name": "ImageUrl",
+            "typeName": "nvarchar",
+            "max_length": 1000,
+            "precision": 0,
+            "scale": 0,
+            "is_nullable": true,
+            "default_value": null,
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "nvarchar(1000)",
+            "precision_display": "1000",
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 8,
+            "name": "InsertDate",
+            "typeName": "datetime",
+            "max_length": 8,
+            "precision": 23,
+            "scale": 3,
+            "is_nullable": false,
+            "default_value": "(getdate())",
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "datetime",
+            "precision_display": null,
+            "table_name": "Item",
+            "DATA_TYPE": "Date",
+            "FORMATTING": "Short Date",
+            "ALIGN": "Right",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 2,
+            "name": "Name",
+            "typeName": "nvarchar",
+            "max_length": 1000,
+            "precision": 0,
+            "scale": 0,
+            "is_nullable": true,
+            "default_value": null,
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "nvarchar(1000)",
+            "precision_display": "1000",
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 9,
+            "name": "NeedsPrice",
+            "typeName": "bit",
+            "max_length": 1,
+            "precision": 1,
+            "scale": 0,
+            "is_nullable": false,
+            "default_value": "(isnull([dbo].[usfGetSystemSetting]('DefaultNeedsPrice'),(0)))",
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "bit",
+            "precision_display": null,
+            "table_name": "Item",
+            "DATA_TYPE": "Number",
+            "FORMATTING": "True/False",
+            "ALIGN": "Right",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 1,
+            "name": "Number",
+            "typeName": "nvarchar",
+            "max_length": 128,
+            "precision": 0,
+            "scale": 0,
+            "is_nullable": false,
+            "default_value": null,
+            "is_unique": true,
+            "is_primary_key": true,
+            "enableInABC": null,
+            "typeName_display": "nvarchar(128)",
+            "precision_display": "128",
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": false,
+            "IsKey": true,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 3,
+            "name": "SearchName",
+            "typeName": "nvarchar",
+            "max_length": 1024,
+            "precision": 0,
+            "scale": 0,
+            "is_nullable": true,
+            "default_value": null,
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "nvarchar(1024)",
+            "precision_display": "1024",
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        },
+        {
+            "column_id": 11,
+            "name": "Url",
+            "typeName": "nvarchar",
+            "max_length": 1000,
+            "precision": 0,
+            "scale": 0,
+            "is_nullable": true,
+            "default_value": null,
+            "is_unique": null,
+            "is_primary_key": false,
+            "enableInABC": null,
+            "typeName_display": "nvarchar(1000)",
+            "precision_display": "1000",
+            "table_name": "Item",
+            "DATA_TYPE": "Text",
+            "FORMATTING": "",
+            "ALIGN": "Left",
+            "ViewSecurityRightID": null,
+            "EditSecurityRightID": null,
+            "EditTableSecurityRightID": "dataadmin-item_edit",
+            "canEdit": true,
+            "IsKey": false,
+            "Condition": "and Number = '@Data.Number~'",
+            "isPriceColumn": null
+        }
+    ],
+    "Errors": [],
+    "Succeeded": true
+}
+
 ```
