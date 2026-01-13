@@ -62,8 +62,8 @@
     ]
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/priceedge logo black.svg",
+    "dark": "/logo/priceedge logo white.svg"
   },
   "navbar": {
     "links": [
