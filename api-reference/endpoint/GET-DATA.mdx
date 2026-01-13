@@ -1,0 +1,90 @@
+---
+title: "General - Set and get data"
+description: "..."
+icon: rotate-right
+---
+On most end-point you could do a GET to get the table meta dat,  just like we saw in the quick start. 
+
+
+## Get data
+
+``` Http
+POST {api_url}/api/tables/{TableName}
+``` 
+
+``` Http
+POST {api_url}/api/tables/{TableName} HTTP/1.1
+
+Content-Type: application/json
+Authorization: Bearer {token}
+client_id: {unique client id}
+
+{
+	"page": 1,
+	"nrOfRecords": 100,
+	"filters": [
+			{
+				"columnName": "Material", "op":"=", "value": "Steel"
+			}
+		],
+	"fields": ["cd_ItemNumber", "Material", "Width", "Supplier"],
+	"orderby": ["cd_ItemNumber"]
+}
+
+``` 
+
+The response for a successful request would be
+
+
+```JSON
+{
+    "Data": {
+        "data": [
+            {
+                "cd_ItemNumber": "ABC123",
+                "Material": "Steel",
+                "Width": 10,
+                "Supplier": ""
+            }
+        ],
+        "totalNumberOfRecords": 1
+    },
+    "Errors": [],
+    "Succeeded": true
+}
+```
+<Card title="Filter options" icon="filters" iconType="duotone" color="#ca8b04">
+Filter Options:
+</Card>
+
+
+
+
+``` Http
+
+
+```
+
+## SET DATA
+
+Use this action to add or update values in tables. Limit to 
+2000 rows per request.
+
+Use the verb **PUT**
+
+Example:
+
+~~~~
+PUT {api_url}/api/tables/{TableName} HTTP/1.1
+
+Content-Type: application/json
+Authorization: Bearer {token}
+client_id: {unique client id}
+
+[{
+    "cd_ItemNumber": "ABC123",
+    "Material": "Steel",
+    "Width": 10,
+    "Supplier": "Supplier Name"
+}]
+~~~~
