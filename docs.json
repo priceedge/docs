@@ -45,6 +45,13 @@
               "api-reference/endpoint/GET-DATA",
               "api-reference/endpoint/SET-DATA"
             ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/webhook",
+              "api-reference/endpoint/webhooksecurity"
+            ]
           }
         ]
       }
