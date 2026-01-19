@@ -50,7 +50,7 @@
             "group": "Webhooks",
             "pages": [
               "api-reference/webhooks/webhook",
-              "api-reference/endpoint/webhooksecurity"
+              "api-reference/webhooks/webhooksecurity"
             ]
           }
         ]
