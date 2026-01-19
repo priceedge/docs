@@ -1,0 +1,99 @@
+---
+title: 'Webhook'
+description: 'How to setup webhooks'
+icon: up-right-and-down-left-from-center
+---
+
+## What are webhooks
+
+It is an event-driven approach that ensures a service provider can send the right notification to the right external services at the time it occurs. In another way, it is a machine to machine architectural pattern that enables a client API to receive updates to data as they happen, rather than polling for the latest updates.
+
+## How it works
+
+When an event is fired inside Price Edge that a webhook is registered to, a request will be sent to the registered endpoint with the following signature
+
+
+
+
+```http
+POST {REGISTERED ENDPOINT} HTTP/1.1
+x-priceedge-webhook-signature: {SHA512 Signature}
+content-type: application/json
+
+{
+	"eventType": "change",
+	"eventTime": "2023-06-14 15:54:10",
+	"eventId": "3DD64E28-4455-40C9-BE02-DEB7D5E39B76",
+	"source": "table",
+	"sourceObject": "Extension_Factors"
+}
+
+OR
+
+{
+	"eventType": "change",
+	"eventTime": "2023-06-14 15:54:10",
+	"eventId": "3DD64E28-4455-40C9-BE02-DEB7D5E39B76",
+	"source": "pepe",
+	"sourceObject": "NextRRP"
+}
+
+OR
+{
+  "eventType": "change",
+  "eventTime": "2023-06-22 16:59:14",
+  "eventId": "13069F5C-EC73-437F-9842-F51C77CA01C4",
+  "source": "pepe",
+  "sourceObject": "Suggested_Price",
+  "pageNumber": 1,
+  "data": [
+    {
+      "cd_ItemNumber": "100011",
+      "cd_PriceList": "SE",
+      "Value": 127
+    },
+    {
+      "cd_ItemNumber": "100012",
+      "cd_PriceList": "NO",
+      "Value": 209.25
+    }
+	]
+}
+```
+
+## Register a new web hook
+<Warning>If you choose "includeData": true, the max repsonse body size is 8000 chars, which can result in invalid JSON if longer </Warning>
+``` Http
+PUT {api_url}/api/system/webhooks
+Content-Type: application/json
+
+{
+    "externalUrl": "https://webhook.site/3431a3c0-a123-4e24-9bbc-5ae0acf780d9",
+    "sharedSecret": "bamboo", //any text, it will be used in the signature
+    "eventType":"change",
+    "eventSource":"table", //pepe, table
+    "eventSourceObject":"Item_Extension", //pepe(price)column or table name
+		"includeData": false, //optional; true/false if expeted alot of data then false
+}
+```
+
+
+## List registered web hooks
+
+``` Http
+GET {api_url}/api/system/webhooks
+```
+
+## Unregister web hooks
+
+``` Http
+DELETE {api_url}/api/system/webhooks/{ID}
+```
+
+## Test web hooks
+
+This will simulate a change in the object it is registered to. It could mean that other hooks registered to the same event will also receive a ping *(this behaviour will change in the future to only send the notification to this specific webhook)*
+
+``` Http
+POST {api_url}/api/system/webhooks/{ID} 
+```
