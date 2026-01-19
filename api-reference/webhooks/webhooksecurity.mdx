@@ -1,0 +1,61 @@
+---
+title: 'Webhook Security'
+description: ''
+icon: shield-halved
+---
+## Security
+
+By default, Price Edge will not send any kind of data through the web hooks. The reason for that is to ensure that only authorised entities have access to the data. When a request is received, it is the client that needs to request the data using the regular flow.  
+
+If however you do want to include the data in the request, you can set this when registering the webhook.
+
+The receiving service can implement a verification step as Price Edge will include a hashed signature in the request header (`X-Priceedge-Webhook-Signature`), which uses the shared secret value that was sent when the hook was registered. The signature text is formatted as: `"{data.eventTime}.{data.eventId}.{clientSecret}”` (data is the body of the request). A sample C# program to check the signature is included bellow.
+
+One additional validation the receiving service can implement is only allowing the Price Edge IP (`thirty-four.242.194.17`) to call the endpoint.
+
+```csharp
+using System;
+using System.Security.Cryptography;
+using System.Text;
+					
+public class Program
+{
+	private static byte[] ComputeSHA512Hash(string data)
+	{
+		byte[] hash;
+		using (SHA512 shaM = SHA512.Create())
+			{
+			   var b = Encoding.UTF8.GetBytes(data);
+			   hash = shaM.ComputeHash(b);
+			}
+		return hash;
+	}
+	
+	private static bool check(string serverSignature, dynamic data){
+		var clientSecret = "THIS IS A SECRET";
+		var stringToHash = $"{data.eventTime}.{data.eventId}.{clientSecret}";
+		var hmacResult = ComputeSHA512Hash(stringToHash);
+		var clientSignature = Convert.ToHexString(hmacResult);
+	
+		return clientSignature == serverSignature;
+	}
+	
+	public static void Main()
+	{
+		var requestBody = @"{
+  ""eventType"": ""change"",
+  ""eventTime"": ""2023-06-14 13:56:12"",
+  ""eventId"": ""1A2AE4F6-60EE-49BC-B1E5-BCCD4D77EA6D"",
+  ""source"": ""table"",
+  ""sourceObject"": ""Extension_Factors""
+}";
+		dynamic body = Newtonsoft.Json.JsonConvert.DeserializeObject(requestBody);
+		if (
+		check("3A003D142EB816099406B89D41DAA6F060885320BB9D4C8288CE46F7A78DB859A99AD34766A23476C3AB81A680997811D7FF2F15AF37DD971FEB389F063B938E", //this is what you need to check //Take from request header "X-Priceedge-Webhook-Signature"
+			  body))
+			Console.WriteLine("Good signature");
+		else
+			Console.WriteLine("Bad signature");
+	}
+}
+```
