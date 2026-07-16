@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "PriceEdge Documentation",
   "colors": {
     "primary": "#e73b66",
     "light": "#e73b66",
@@ -40,7 +40,7 @@
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Data endpoints",
             "pages": [
               "api-reference/endpoint/GET-DATA",
               "api-reference/endpoint/SET-DATA"
@@ -88,7 +88,7 @@
   },
   "footer": {
     "socials": {
-     
+      "linkedin": "https://www.linkedin.com/company/priceedge"
     }
   }
 }
