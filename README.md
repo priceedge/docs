@@ -1,4 +1,4 @@
-# PriceEdge Documentation
+# PriceEdge API Documentation
 
 API documentation for PriceEdge, built with [Mintlify](https://mintlify.com).
 

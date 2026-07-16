@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "PriceEdge Documentation",
+  "name": "PriceEdge API Documentation",
   "colors": {
     "primary": "#e73b66",
     "light": "#e73b66",
