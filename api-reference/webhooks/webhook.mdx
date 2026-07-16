@@ -63,6 +63,7 @@ OR
 
 ## Register a new web hook
 <Warning>If you choose "includeData": true, the max repsonse body size is 8000 chars, which can result in invalid JSON if longer </Warning>
+<Warning>`includeData` and `includeDataCacheKey` are mutually exclusive. Use one or the other, not both.</Warning>
 ``` Http
 PUT {api_url}/api/system/webhooks
 Content-Type: application/json
@@ -77,6 +78,7 @@ Content-Type: application/json
 }
 ```
 
+For webhooks that deliver a cache snapshot instead of row data, see [Webhook cache snapshot](/api-reference/webhooks/webhook-cache).
 
 ## List registered web hooks
 

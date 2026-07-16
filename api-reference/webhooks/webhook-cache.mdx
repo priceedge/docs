@@ -1,0 +1,158 @@
+---
+title: "Webhook cache snapshot"
+description: "Configure webhooks to automatically build a cache snapshot when they fire, for any event source."
+icon: database
+---
+
+## Cache snapshot
+
+Webhooks can be configured to automatically build a cache snapshot when they fire, so your integration receives everything it needs to begin paging immediately — without building the cache manually. This works for **any webhook source**, including tables (`table`) and price columns (`pepe`).
+
+## How it works
+
+When **`includeDataCacheKey`** is enabled on a webhook, each time the webhook fires it:
+
+1. Builds a snapshot that freezes the **set of matching rows and their order** for the configured source object.
+2. Delivers a webhook callback with the cache metadata instead of raw row data.
+
+When you subsequently fetch pages using the `cacheKey`, the row selection and ordering are stable, but the column values returned reflect the current state of the data at the time each page is fetched.
+
+<Warning>
+  **`includeData`** and **`includeDataCacheKey`** are mutually exclusive — you can use one or the other, not both.
+</Warning>
+
+## Webhook notification payload
+
+In addition to the standard webhook fields (`eventType`, `eventTime`, `eventId`, `source`, `sourceObject`), the body includes:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `cacheKey` | `string` (GUID) | Identifier for the snapshot. Pass this as `CacheKey` in POST requests to fetch pages. |
+| `totalRows` | `integer` | Total number of rows in the snapshot. |
+| `totalPages` | `integer` | Number of pages at the configured page size. |
+| `pageSize` | `integer` | Rows per page for this snapshot. |
+
+Use `source` and `sourceObject` from the payload to determine which data endpoint to call when fetching pages.
+
+### Example payload — table source
+
+```json
+{
+  "eventType": "change",
+  "eventTime": "2023-06-14 15:54:10",
+  "eventId": "3DD64E28-4455-40C9-BE02-DEB7D5E39B76",
+  "source": "table",
+  "sourceObject": "Item_Extension",
+  "cacheKey": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "totalRows": 8400,
+  "totalPages": 17,
+  "pageSize": 500
+}
+```
+
+### Example payload — price column source
+
+```json
+{
+  "eventType": "change",
+  "eventTime": "2023-06-14 15:54:10",
+  "eventId": "3DD64E28-4455-40C9-BE02-DEB7D5E39B76",
+  "source": "pepe",
+  "sourceObject": "LocalListPrice",
+  "cacheKey": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "totalRows": 12500,
+  "totalPages": 25,
+  "pageSize": 500
+}
+```
+
+## Fetching data after a webhook fires
+
+Use `cacheKey` from the webhook payload and call the appropriate data endpoint based on `source`:
+
+### Table source
+
+```http
+POST {api_url}/api/tables/{sourceObject}
+
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "CacheKey": "<cacheKey from webhook>",
+  "Page": 1
+}
+```
+
+See [Get data](/api-reference/endpoint/GET-DATA) for the table data endpoint.
+
+### Price column source
+
+```http
+POST {api_url}/api/prices/{sourceObject}
+
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "CacheKey": "<cacheKey from webhook>",
+  "Page": 1
+}
+```
+
+See [Extract prices](/api-reference/price-extraction/extract-prices) for cache-backed pagination details.
+
+Increment `Page` for each subsequent page until you have consumed `totalPages` pages.
+
+## Webhook configuration settings
+
+| Setting | Description |
+| --- | --- |
+| **`includeDataCacheKey`** | Enables the snapshot behavior. When `true`, each trigger builds a snapshot and sends cache metadata in the callback instead of row data. |
+| **Cache page size** | Number of rows per page in the snapshot. Accepts values from 1 to 100,000. Defaults to 100 when not set. |
+| **Immediate delivery** | When on, the snapshot is built and delivered on every trigger immediately. When off, delivery is deferred until the configured quiet period has elapsed since the last activity. |
+| **Quiet period (minutes)** | Minutes of inactivity that must pass before a deferred snapshot is built and delivered. Only applies when immediate delivery is disabled. |
+
+<Warning>
+  Snapshots expire after approximately 24 hours. Ensure your integration pages through the full snapshot shortly after receiving the webhook.
+</Warning>
+
+## Register a webhook with cache
+
+### Table source example
+
+```http
+PUT {api_url}/api/system/webhooks
+
+Content-Type: application/json
+
+{
+  "externalUrl": "https://your-endpoint.example.com/webhook",
+  "sharedSecret": "your-secret",
+  "eventType": "change",
+  "eventSource": "table",
+  "eventSourceObject": "Item_Extension",
+  "includeDataCacheKey": true,
+  "cachePageSize": 500,
+  "immediateDelivery": true
+}
+```
+
+### Price column source example
+
+```http
+PUT {api_url}/api/system/webhooks
+
+Content-Type: application/json
+
+{
+  "externalUrl": "https://your-endpoint.example.com/webhook",
+  "sharedSecret": "your-secret",
+  "eventType": "change",
+  "eventSource": "pepe",
+  "eventSourceObject": "LocalListPrice",
+  "includeDataCacheKey": true,
+  "cachePageSize": 500,
+  "immediateDelivery": true
+}
+```

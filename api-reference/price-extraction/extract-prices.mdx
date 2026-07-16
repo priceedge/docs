@@ -1,0 +1,165 @@
+---
+title: "Extract prices"
+description: "Read records from a price column's source table with filtering, sorting, pagination, and optional cache-backed snapshots."
+icon: file-export
+---
+
+## Extract prices
+
+Reads records from the source table of the given price column. Supports filtering, field selection, sorting, and pagination. Optionally builds a **cache snapshot** to guarantee consistent ordering and pagination across multiple requests — useful when the underlying data may change between page fetches.
+
+**Required permission:** `Get Prices Data From API - Price Columns (api-prices-extraction)`
+
+```http
+POST {api_url}/api/prices/{priceColumn}
+
+Content-Type: application/json
+Authorization: Bearer {token} // or ApiKey
+client_id: {unique client id} // when using ApiKey, client_id is not needed
+```
+
+| Path parameter | Description |
+| --- | --- |
+| `{priceColumn}` | The `name` value of a price column returned by the GET endpoint (e.g. `LocalListPrice`). |
+
+## Request body
+
+```json
+{
+  "Page": 1,
+  "Skip": 0,
+  "NrOfRecords": 100,
+  "Fields": ["cd_ItemNumber", "Price"],
+  "OrderByNew": [
+    { "columnName": "Price", "type": "desc" }
+  ],
+  "Filters": [
+    { "columnName": "Price", "op": "greaterThan", "value": "100" }
+  ],
+  "UseCache": false,
+  "CacheKey": null
+}
+```
+
+## Request body parameters
+
+### Pagination
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Page` | `integer` | `1` | The page number to fetch (1-based). Used together with `NrOfRecords`. When using a `CacheKey`, this controls which pre-built page is returned. |
+| `Skip` | `integer` | `0` | Number of records to skip before applying paging. Useful for offset-based access. |
+| `NrOfRecords` | `integer` | `100` | Number of records per page. |
+
+### Field selection
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Fields` | `string[]` | `null` (all fields) | Limits the response to the specified column names. Use the `fields` array from the GET endpoint to find valid values. |
+
+### Sorting
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `OrderBy` | `string[]` | `null` | Simple ascending sort by one or more column names. |
+| `OrderByNew` | `object[]` | `null` | Advanced sorting. Each entry has `columnName` (string) and `type` (`"asc"` or `"desc"`). Takes precedence over `OrderBy` when both are provided. |
+
+### Filtering
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Filters` | `object[]` | `null` | Array of filter conditions to apply. See [Filter structure](#filter-structure) below. |
+
+### Caching
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `UseCache` | `boolean` | `false` | When `true`, the API builds a snapshot that freezes the set of matching rows and their order based on your sorting. Returns the first page immediately. Use the returned `CacheKey` for subsequent page requests to walk through the same stable row set. Column values still reflect the latest data at the time each page is fetched. |
+| `CacheKey` | `guid` | `null` | When provided, fetches the specified page from an already-built snapshot. Combine with `Page` to walk through pages. When `CacheKey` is set, `UseCache` is not required. |
+
+## Filter structure
+
+Each filter object in the `Filters` array can have the following fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `columnName` | `string` | The column to filter on. Must be a field listed under `fields` in the GET response. |
+| `op` | `string` | The filter operator. See supported operators below. |
+| `value` | `string` | The filter value as a string. For `Between` / `NotBetween`, use `"low\|high"` format. |
+| `valueArray` | `string[]` | For multi-value operators (`ContainsAny`, `NotContainsAny`). Supply the list of values here instead of `value`. |
+
+### Supported operators (`op`)
+
+| Operator | Description |
+| --- | --- |
+| `=` | Equals. Empty string matches null or empty values. |
+| `!=` | Not equals. Empty string matches not-null / not-empty values. |
+| `equals` | Numeric equals. |
+| `notEqual` | Numeric not equal. |
+| `greaterThan` | Greater than. |
+| `greaterThanOrEqual` | Greater than or equal. |
+| `lessThan` | Less than. |
+| `lessThanOrEqual` | Less than or equal. |
+| `Between` | Between two values. Use `value` in `"low\|high"` format. |
+| `NotBetween` | Not between two values. Use `value` in `"low\|high"` format. |
+| `Contains` | Substring match (LIKE `%value%`). |
+| `NotContains` | Does not contain substring. |
+| `StartsWith` | Starts with the given string. |
+| `NotStartsWith` | Does not start with the given string. |
+| `EndsWith` | Ends with the given string. |
+| `NotEndsWith` | Does not end with the given string. |
+| `ContainsAny` | Matches any value in `valueArray`. |
+| `NotContainsAny` | Does not match any value in `valueArray`. |
+| `equalsBlank` | Value is null or empty. |
+| `notEqualBlank` | Value is not null and not empty. |
+
+## Cache-backed pagination
+
+When fetching large datasets where you need to page through results reliably — especially if the underlying data could change between requests — use the cache snapshot flow:
+
+1. **Build the snapshot** — Send a POST request with `UseCache: true` and your desired `OrderBy` / `OrderByNew` and `NrOfRecords`. The response metadata includes:
+   - `CacheKey` — a GUID identifying this snapshot
+   - `TotalRows` — total number of rows in the snapshot
+   - `TotalPages` — total number of pages at the chosen page size
+   - `PageSize` — confirmed rows per page
+   - The first page of data
+2. **Fetch subsequent pages** — Send additional POST requests with the same `CacheKey` and increment `Page` (e.g. `Page: 2`, `Page: 3`, …). Ordering and page size are already locked into the snapshot, so you do not need to resend them.
+
+This guarantees that every matching record appears exactly once across pages and that ordering is stable, regardless of inserts or deletes in the source table while you are paging. Column values are still read fresh on each page fetch.
+
+<Warning>
+  Snapshots are automatically cleaned up after 24 hours. Page through the snapshot promptly after receiving the cache key.
+</Warning>
+
+<Tip>
+  You may include filters when fetching pages. These filters are applied after the snapshot has been created, when the page is read. If you use filters, use the same filters for every page request to keep the result consistent.
+</Tip>
+
+### Example — page 1 (build cache)
+
+```http
+POST {api_url}/api/prices/LocalListPrice
+
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "UseCache": true,
+  "NrOfRecords": 500,
+  "OrderByNew": [{ "columnName": "cd_ItemNumber", "type": "asc" }]
+}
+```
+
+### Example — page 2 (use existing cache)
+
+```http
+POST {api_url}/api/prices/LocalListPrice
+
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "CacheKey": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "Page": 2
+}
+```

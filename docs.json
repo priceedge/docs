@@ -47,10 +47,19 @@
             ]
           },
           {
+            "group": "Price extraction",
+            "pages": [
+              "api-reference/price-extraction/overview",
+              "api-reference/price-extraction/list-price-columns",
+              "api-reference/price-extraction/extract-prices"
+            ]
+          },
+          {
             "group": "Webhooks",
             "pages": [
               "api-reference/webhooks/webhook",
-              "api-reference/webhooks/webhook-security"
+              "api-reference/webhooks/webhook-security",
+              "api-reference/webhooks/webhook-cache"
             ]
           }
         ]

@@ -1,0 +1,37 @@
+---
+title: "Price extraction"
+description: "Discover price column structure and extract underlying source data with filtering, sorting, pagination, and cache-backed snapshots."
+icon: sparkles
+---
+
+## Overview
+
+The Price Extraction endpoints let you discover how price columns are structured and read the underlying source data that drives prices in the system. Together they provide a controlled way to extract price data with support for filtering, sorting, pagination, and cache-backed snapshots that guarantee consistent results across pages.
+
+**Required permission:** `Get Prices Data From API - Price Columns (api-prices-extraction)`
+
+## Endpoints
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `{api_url}/api/prices` | List all price columns and their source table metadata. |
+| `POST` | `{api_url}/api/prices/{priceColumn}` | Read records from a price column's source table. |
+
+## Typical workflow
+
+1. Call **GET** `/api/prices` to discover available price columns, source tables, and filterable fields.
+2. Call **POST** `/api/prices/{priceColumn}` with filters, field selection, and sorting to extract data.
+3. For large datasets, use **cache-backed pagination** to page through a stable snapshot without missing or duplicating rows.
+4. Optionally, configure a **webhook with cache enabled** to receive a `cacheKey` automatically when the source changes. See [Webhook cache snapshot](/api-reference/webhooks/webhook-cache).
+
+<Card title="List price columns" icon="list" href="/api-reference/price-extraction/list-price-columns">
+  Discover configured price columns and their source table fields.
+</Card>
+
+<Card title="Extract prices" icon="file-export" href="/api-reference/price-extraction/extract-prices">
+  Read, filter, sort, and page through price source data.
+</Card>
+
+<Card title="Webhook cache" icon="webhook" href="/api-reference/webhooks/webhook-cache">
+  Receive a cache key automatically when a webhook fires, then page through results.
+</Card>

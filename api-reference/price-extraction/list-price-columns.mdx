@@ -1,0 +1,47 @@
+---
+title: "List price columns"
+description: "Returns all price columns configured in the system along with metadata about their underlying source tables."
+icon: list
+---
+
+## List price columns
+
+Returns all price columns configured in the system, along with metadata about their underlying source tables. Use this endpoint to understand which price columns exist, what table each one reads from, and what fields are available for filtering or selecting when you call the extraction endpoint.
+
+**Required permission:** `Get Prices Data From API - Price Columns (api-prices-extraction)`
+
+```http
+GET {api_url}/api/prices
+
+Content-Type: application/json
+Authorization: Bearer {token} // or ApiKey
+client_id: {unique client id} // when using ApiKey, client_id is not needed
+```
+
+## Response fields
+
+Each item in the returned array describes one price column:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `string` | Unique identifier for the price column. |
+| `name` | `string` | Display name of the price column. Use this as the `{priceColumn}` path parameter in the POST endpoint. |
+| `sourceTable` | `string` | The underlying database table that this price column reads from. |
+| `valueColumnName` | `string` | The specific column in `sourceTable` that holds the price value. |
+| `priceType` | `string` | The type or category of this price column. |
+| `fields` | `string[]` | All available columns on `sourceTable`. Use these as valid values for `Fields`, `Filters`, and `OrderBy` in the POST request. |
+
+## Example response
+
+```json
+[
+  {
+    "code": "LocalListPrice",
+    "name": "LocalListPrice",
+    "sourceTable": "ExtPrices_LocalList",
+    "valueColumnName": "Price",
+    "priceType": "pepe",
+    "fields": ["cd_ItemNumber", "cd_PriceList", "Price", "ValidFrom", "ValidTo"]
+  }
+]
+```
